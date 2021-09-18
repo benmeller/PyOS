@@ -7,26 +7,53 @@ Below are the essential modules needed in order to build the system. Once they a
 """
 import os
 
-def hello():
+def hello(self, *args):
     print("Hello, World!")
 
-def mkdir():
+def mkdir(self, *args):
     pass 
 
-def mkfile():
+def mkfile(self, *args):
     pass
 
-def ls(self, *args):
+def ls(self, args):
     """
-    Prints out the contents of a directory
+    Prints out the contents of a given directory
+
+    Usage: ls [directory]
     """
-    print("args:", *args)
-    print("Directory:", self.root + self.delim.join(self.current_dir))
-    # for i in self.get_current_directory():
-    #         print(i)
+    args = args.split()
+
+    if len(args) > 1:
+        print("Usage: ls [directory]")
+    elif len(args) == 1:
+        dir, path = self.current_dir.resolve_path(args[0], directory=True)
+        if path != '':
+            print(args[0], "is not a directory!")
+            return
+    else:
+        dir = self.current_dir
+
+    print("Directory:", dir.filepath)
+    for i in dir.get_children():
+            print(i, end="\t")
+    print()
 
 def cd(self, *args):
-    pass
+    """
+    Move to a given directory.
+
+    Usage: cd [directory]
+    """
+    if len(args) > 1:
+        print("Usage: cd [directory]")
+    elif len(args) == 1:
+        dir, path = self.current_dir.resolve_path(args[0], directory=True)
+        if path != '':
+            print(args[0], "is not a directory!")
+            return
+
+    self.current_dir = dir
 
 def clear(self, *args):
     """

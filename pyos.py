@@ -1,18 +1,25 @@
 from cmd import Cmd
 import types
 import getpass
+
 from lkm import *
+from filesystem import *
 
 class PyOS(Cmd):
-    def __init__(self, root="/", delim="/", completekey='tab') -> None:
+    """
+    Currently only designed for a single user
+    """
+
+    def __init__(self, root="", delim="/", completekey='tab') -> None:
         super().__init__(completekey)
 
-        self.fs = {}
+        # Temporary setup for now
+        self.fs = fs_setup()
+        # self.fs = File(filepath=root, directory=True, delim=delim)
 
-        self.delim = delim 
-        self.root = root 
-
-        self.current_dir = []
+        # self.delim = delim 
+        # self.root = root 
+        self.current_dir = self.fs
 
         self.modules = {}
 
@@ -21,13 +28,22 @@ class PyOS(Cmd):
         self.prompt = "\033[92m{user}@{hostname}\033[0m:\033[94m{dir}\033[0m$ ".format(
             user=self.username,
             hostname=self.compname,
-            dir=(self.root + self.delim.join(self.current_dir))
+            dir=(self.current_dir.filepath)
         )
+
+    def postcmd(self, *args):
+        # Dynamically update prompt. Useful for when cd command is used
+        self.prompt = "\033[92m{user}@{hostname}\033[0m:\033[94m{dir}\033[0m$ ".format(
+            user=self.username,
+            hostname=self.compname,
+            dir=(self.current_dir.filepath)
+        )
+
 
     def load_lkm(self, lkm_name, lkm):
         """
-        Loadable kernel module. Add command dynamically to PyOS by promoting 
-        a func to a method.
+        Loadable kernel module. Dynamically add a 'binary' to PyOS by promoting 
+        a func to a method
 
         Immeasurable thanks to Alan Robertson for insights into this problem
         """
@@ -46,14 +62,17 @@ class PyOS(Cmd):
 modules = {
     "hello": hello,
     "ls": ls,
+    "cd": cd,
     "mkdir": mkdir,
     "mkfile": mkfile,
     "clear": clear
 }
 
+intro_str = """Welcome to PyOS!
+Type 'help' to view a list of available commands"""
+
 if __name__=="__main__":
     comp = PyOS()
     for name in modules.keys():
         comp.load_lkm(name, modules[name])
-
-    comp.cmdloop()
+    comp.cmdloop(intro=intro_str)
