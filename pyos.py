@@ -31,6 +31,62 @@ class PyOS(Cmd):
             dir=(self.current_dir.filepath)
         )
 
+    def cmdloop(self, intro=None):
+        """Overriding super.cmdloop() to allow for (a) escaping to create a new
+        prompt and (b) exiting on EOF
+        
+        Repeatedly issue a prompt, accept input, parse an initial prefix
+        off the received input, and dispatch to action methods, passing them
+        the remainder of the line as argument.
+        """
+
+        self.preloop()
+        if self.use_rawinput and self.completekey:
+            try:
+                import readline
+                self.old_completer = readline.get_completer()
+                readline.set_completer(self.complete)
+                readline.parse_and_bind(self.completekey+": complete")
+            except ImportError:
+                pass
+        try:
+            if intro is not None:
+                self.intro = intro
+            if self.intro:
+                self.stdout.write(str(self.intro)+"\n")
+            stop = None
+            while not stop:
+                try:
+                    if self.cmdqueue:
+                        line = self.cmdqueue.pop(0)
+                    else:
+                        if self.use_rawinput:
+                            line = input(self.prompt)
+                        else:
+                            self.stdout.write(self.prompt)
+                            self.stdout.flush()
+                            line = self.stdin.readline()
+                            if not len(line):
+                                raise EOFError
+                            else:
+                                line = line.rstrip('\r\n')
+                    line = self.precmd(line)
+                    stop = self.onecmd(line)
+                    stop = self.postcmd(stop, line)
+                    self.postloop()
+                except KeyboardInterrupt:
+                    print("^C")
+        except EOFError:
+            print("EOF received. Goodbye!")
+            raise SystemExit
+        finally:
+            if self.use_rawinput and self.completekey:
+                try:
+                    import readline
+                    readline.set_completer(self.old_completer)
+                except ImportError:
+                    pass
+
     def postcmd(self, *args):
         # Dynamically update prompt. Useful for when cd command is used
         self.prompt = "\033[92m{user}@{hostname}\033[0m:\033[94m{dir}\033[0m$ ".format(
