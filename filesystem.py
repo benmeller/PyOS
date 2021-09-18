@@ -59,7 +59,7 @@ class File(object):
             return 
         self.children.append(filepath)
 
-    def mkfile(self, filepath, **kwargs):
+    def mkfile(self, filepath, **kwargs) -> None:
         """
         Makes a file at the specified location.
 
@@ -125,7 +125,7 @@ class File(object):
                         # Pass over file and continue searching for dir
                         continue
                     elif 'directory' in kwargs:
-                        if kwargs['directory'] != child.directory:
+                        if (len(dir_path) <= 1) and (kwargs['directory'] != child.directory):
                             # We've come across a file/dir of same name
                             # Can ignore if they're different (dir vs folder)
                             continue
@@ -156,11 +156,11 @@ def fs_setup():
     fs.mkfile('boot', directory=True)
     fs.mkfile('root', directory=True)
 
-    fs.mkfile('/etc/shadow')
+    fs.mkfile('/etc/shadow', contents="Very secure passwords be here")
 
-    fs.mkfile('/lib/ls')
-    fs.mkfile('/lib/echo')
-    fs.mkfile('/lib/cd')
+    fs.mkfile('/lib/ls', contents="I am ls")
+    fs.mkfile('/lib/echo', contents="I am echo")
+    fs.mkfile('/lib/cd', contents="I am cd")
     
     fs.mkfile('bin', directory=False)
 

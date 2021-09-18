@@ -60,12 +60,13 @@ class PyOS(Cmd):
         return dir(self)
 
 modules = {
-    "hello": hello,
+    "exit":exit,
     "ls": ls,
     "cd": cd,
     "mkdir": mkdir,
-    "mkfile": mkfile,
-    "clear": clear
+    "touch": touch,
+    "clear": clear,
+    "cat": cat,
 }
 
 intro_str = """Welcome to PyOS!
