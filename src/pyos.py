@@ -123,6 +123,7 @@ modules = {
     "touch": touch,
     "clear": clear,
     "cat": cat,
+    "edit": edit,
 }
 
 intro_str = """Welcome to PyOS!

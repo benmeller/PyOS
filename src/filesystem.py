@@ -78,7 +78,7 @@ class File(object):
         """
         For a given filepath, resolve whatever path exists and pass back two objects:
         - File object of the resolved path
-        - filepath string of whatever if remaining
+        - filepath string of whatever is remaining
 
         For example, let's say this folder exists /foo/bar/, and we wish to resolve
         /foo/bar/baz/myfile, resolve_path() will return:

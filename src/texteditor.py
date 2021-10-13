@@ -12,6 +12,8 @@ import curses.ascii
 from os import name
 from time import sleep
 
+import filesystem
+
 class Window(object):
     """
     An object used to determine what content to keep in view while using TextPad
@@ -389,27 +391,22 @@ Ctl+C       Quit (do not save)
         
         return self.buf.result()
 
-def main(stdscr, contents: str, *args, **kwargs):
+def edit_file(stdscr, file: filesystem.File, *args, **kwargs):
     """
-    Content should be a string. String will be split up by newline character.
-    Naturally this could be changed to support any sort of input - strings,
-    lists, files, you name it. For now, this is convenient.
+    Given a PyOS file, open it up in a textpad. On exit, if it is to be saved,
+    update the file contents.
     """
+    contents = file.contents.split("\n")
+
     curses.use_default_colors()
     window = Window(curses.LINES -1, curses.COLS-1)
     cursor = Cursor()
-    buffer = Buffer(contents.split("\n"))
+    buffer = Buffer(contents)
     pad = TextPad(stdscr, window, cursor, buffer, debug=False)
 
     curses.raw()
     result = pad.edit()
     curses.noraw()
 
-    return result
-
-contents = """Hello,
-World
-
-This is a multiline file"""
-res = curses.wrapper(main, contents=contents)
-print(res)
+    if pad.save_on_exit:
+        file.contents = result

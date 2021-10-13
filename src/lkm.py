@@ -7,6 +7,8 @@ Currently in this file for readability's sake. For later compilation and obfusca
 Below are the essential modules needed in order to build the system. Once they are in place, all other modules can simply be written as 'files' in pyos and loaded. Again, inspiration taken from Alan Robertson
 """
 import os
+import curses
+import texteditor
 
 def exit(self, args):
     """Exits PyOS"""
@@ -14,7 +16,8 @@ def exit(self, args):
     raise SystemExit
 
 def mkdir(self, args):
-    """Create one or multiple directories
+    """
+    Create one or multiple directories
     
     Usage: mkdir directory[ directory]
     """
@@ -29,9 +32,10 @@ def mkdir(self, args):
         self.current_dir.mkfile(args[0], directory=True)
 
 def touch(self, args):
-    """Create a new, empty file, or multiple
+    """
+    Create a new, empty file, or multiple
 
-    Usage: touch filename
+    Usage: touch [filename]
     """
     args = args.split()
 
@@ -44,9 +48,11 @@ def touch(self, args):
         self.current_dir.mkfile(args[0], directory=False)
 
 def cat(self, args):
-    """Print contents of a single file to stdout
+    """
+    Print contents of a single file to stdout
     
-    Usage: cat filename"""
+    Usage: cat filename
+    """
     args = args.split()
 
     if len(args) != 1:
@@ -64,7 +70,8 @@ def ls(self, args):
     """
     Prints out the contents of a given directory
 
-    Usage: ls [directory]"""
+    Usage: ls [directory]
+    """
     args = args.split()
 
     if len(args) > 1:
@@ -107,6 +114,28 @@ def clear(self, *args):
     Clears the screen
     """
     os.system("clear")
+
+def edit(self, args):
+    """
+    Open a pyos file in the text editor. If the file does not exist, a new file
+    is created implicitly (even if changes aren't written to the new file)
+
+    Usage: edit [filename]
+    """
+    args = args.split()
+
+    if len(args) != 1:
+        print("Usage: edit [filename]")
+        return
+
+    file, path = self.current_dir.resolve_path(args[0], directory=False)
+
+    if path != '':
+        # If file does not exist, implicitly create it
+        file.mkfile(path, directory=False)
+        file, path = file.resolve_path(path, directory=False)
+    
+    curses.wrapper(texteditor.edit_file, file=file)
 
 def lkm_loader():
     """
