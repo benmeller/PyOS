@@ -16,3 +16,11 @@ At the moment, we have a working prompt, filesystem, basic commands (cd, ls, cat
 * Permissions
 * Boot/reboot
 * Remove cmd.Cmd `cmdloop()` as central point of OS
+
+
+## Next Steps
+Start to move all the modules into PyOS files, and then load them from the files into the OS. so in the codebase, all of these modules should just exist as multiline strings. From there, they can be built as a module and dynamically loaded into the OS.
+
+Basically, time to sort out all the modules
+{HELP} <string>
+{EXEC} <code>

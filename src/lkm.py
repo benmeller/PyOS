@@ -29,7 +29,7 @@ def mkdir(self, args):
             mkdir(self, newdir)
     elif len(args) == 1:
         print("Creating directory", args)
-        self.current_dir.mkfile(args[0], directory=True)
+        self.mkfile(self.current_dir, args[0], directory=True)
 
 def touch(self, args):
     """
@@ -45,7 +45,7 @@ def touch(self, args):
             touch(self, newdir)
     elif len(args) == 1:
         print("Creating Files", args)
-        self.current_dir.mkfile(args[0], directory=False)
+        self.mkfile(self.current_dir, args[0], directory=False)
 
 def cat(self, args):
     """
@@ -59,7 +59,7 @@ def cat(self, args):
         print("Usage: cat [filename]")
         return 
 
-    file, path = self.current_dir.resolve_path(args[0], directory=False)
+    file, path = self.resolve_path(self.current_dir, args[0], directory=False)
     if path != '':
         print(args[0], "does not exist!")
         return
@@ -78,7 +78,7 @@ def ls(self, args):
         print("Usage: ls [directory]")
         return
     elif len(args) == 1:
-        dir, path = self.current_dir.resolve_path(args[0], directory=True)
+        dir, path = self.resolve_path(self.current_dir, args[0], directory=True)
         if path != '':
             print(args[0], "is not a directory!")
             return
@@ -102,7 +102,7 @@ def cd(self, args):
         print("Usage: cd [directory]")
         return
 
-    new_dir, path = self.current_dir.resolve_path(args[0], directory=True)
+    new_dir, path = self.resolve_path(self.current_dir, args[0], directory=True)
     if path != '':
         print(args[0], "is not a directory!")
         return
@@ -128,12 +128,12 @@ def edit(self, args):
         print("Usage: edit [filename]")
         return
 
-    file, path = self.current_dir.resolve_path(args[0], directory=False)
+    file, path = self.resolve_path(self.current_dir, args[0], directory=False)
 
     if path != '':
         # If file does not exist, implicitly create it
-        file.mkfile(path, directory=False)
-        file, path = file.resolve_path(path, directory=False)
+        self.mkfile(file, args[0], directory=False)
+        file, path = self.resolve_path(file, path, directory=False)
     
     curses.wrapper(texteditor.edit_file, file=file)
 

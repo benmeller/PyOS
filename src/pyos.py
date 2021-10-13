@@ -5,21 +5,24 @@ import getpass
 from lkm import *
 from filesystem import *
 
+DELIM = "/"
+ROOT = ""
+
 class PyOS(Cmd):
     """
     Currently only designed for a single user
     """
 
-    def __init__(self, root="", delim="/", completekey='tab') -> None:
+    def __init__(self, root_name="", delim="/", completekey='tab') -> None:
         super().__init__(completekey)
 
-        # Temporary setup for now
-        self.fs = fs_setup()
-        # self.fs = File(filepath=root, directory=True, delim=delim)
-
+        # TODO: Make the delimiter and root location modifiable. Low priority
         # self.delim = delim 
-        # self.root = root 
+        # self.root = root_name 
+
+        self.fs = File(filepath=ROOT, directory=True)
         self.current_dir = self.fs
+        fs_setup(self)
 
         self.modules = {}
 
@@ -31,6 +34,7 @@ class PyOS(Cmd):
             dir=(self.current_dir.filepath)
         )
 
+    # --------------- Cmd Overrides --------------------
     def cmdloop(self, intro=None):
         """Overriding super.cmdloop() to allow for (a) escaping to create a new
         prompt and (b) exiting on EOF
@@ -95,7 +99,94 @@ class PyOS(Cmd):
             dir=(self.current_dir.filepath)
         )
 
+    def get_names(self) -> list[str]:
+        """
+        Override Cmd.get_names so that dynamically loaded kernel modules show
+        up in help menu
+        """
+        return dir(self)
 
+    # --------------- Filesystem --------------------
+    def mkfile(self, current_dir, filepath, **kwargs) -> None:
+        """
+        Makes a file at the specified location in relation to current_directory
+        (which is technically just a file where directory=True).
+
+        If you want to create a file with the same name as a pre-existing 
+        directory, need to specify directory=False in kwargs. Seems dodgy. 
+        Can't think of a better way to do it at the moment
+        """
+        if not current_dir.directory:
+            print("Cannot add subdirectory to a file")
+            return
+
+        target_dir, updated_path = self.resolve_path(self.current_dir, filepath, **kwargs)
+        target_dir.add_child(File(updated_path, parent=target_dir, **kwargs))
+
+    def resolve_path(self, current_file, filepath, **kwargs):
+        """
+        For a given filepath, resolve whatever path exists and pass back two objects:
+        - File object of the resolved path
+        - filepath string of whatever is remaining
+
+        For example, let's say this folder exists /foo/bar/, and we wish to resolve
+        /foo/bar/baz/myfile, resolve_path() will return:
+        - The File object associated with /foo/bar
+        - Remaining string "baz/myfile"
+
+        In the situation where a file and directory may exist with the same name,
+        you can specify which to look for by directory=<boolean> in **kwargs
+
+        TODO: Incorporate permissions
+        """
+        if filepath == "":
+            # Catch recursive case at root
+            return current_file, ""
+
+        dir_path = filepath.split(DELIM)
+
+        # ----- Upward traversal -----
+        # Absolute path
+        if dir_path[0] == ROOT:
+            # Traverse to top of tree and back down
+            if current_file.parent == None:
+                # Reached root. Begin resolving down now
+                return self.resolve_path(current_file, DELIM.join(dir_path[1:]), **kwargs)    
+            else:
+                # Keep going up
+                return self.resolve_path(current_file.parent, filepath)
+        
+        # Parent directory
+        elif dir_path[0] == '..':
+            return self.resolve_path(current_file.parent, DELIM.join(dir_path[1:]), **kwargs)
+
+        # Current directory
+        elif dir_path[0] == '.':
+            # Current directory
+            return self.resolve_path(current_file, DELIM.join(dir_path[1:]), **kwargs)
+            
+        # ----- Downward traversal -----
+        else:
+            for child in current_file.get_children():
+                if child.name == dir_path[0]:
+                    if len(dir_path) > 1 and not child.directory:
+                        # Dir path clearly referencing a directory, not a file
+                        # Pass over file and continue searching for dir
+                        continue
+                    elif 'directory' in kwargs:
+                        if (len(dir_path) <= 1) and (kwargs['directory'] != child.directory):
+                            # We've come across a file/dir of same name
+                            # Can ignore if they're different (dir vs folder)
+                            continue
+                    return self.resolve_path(child, DELIM.join(dir_path[1:]), **kwargs)
+            
+            # If child not found, we've reached end of traversal, can return
+            target_dir = current_file 
+            new_path = DELIM.join(dir_path)
+
+        return target_dir, new_path
+
+    # --------------------------------------
     def load_lkm(self, lkm_name, lkm):
         """
         Loadable kernel module. Dynamically add a 'binary' to PyOS by promoting 
@@ -108,15 +199,31 @@ class PyOS(Cmd):
         # TODO: Replace lkm with some lkm data object. 
         self.modules[lkm_name] = lkm
 
-    def get_names(self) -> list[str]:
-        """
-        Override Cmd.get_names so that dynamically loaded kernel modules show
-        up in help menu
-        """
-        return dir(self)
+
+def fs_setup(pyos):
+    """
+    Makes a bunch of typical files, useful for testing whether the filesystem
+    commands work or not.
+    """
+    pyos.mkfile(pyos.fs, 'bin', directory=True)
+    pyos.mkfile(pyos.fs, 'home', directory=True)
+    pyos.mkfile(pyos.fs, 'etc', directory=True)
+    pyos.mkfile(pyos.fs, 'lib', directory=True)
+    pyos.mkfile(pyos.fs, 'boot', directory=True)
+    pyos.mkfile(pyos.fs, 'root', directory=True)
+
+    pyos.mkfile(pyos.fs, '/etc/shadow', contents="Very secure passwords be here")
+    pyos.mkfile(pyos.fs, '/lib/ls', contents="I am ls")
+    pyos.mkfile(pyos.fs, '/lib/echo', contents="I am echo")
+    pyos.mkfile(pyos.fs, '/lib/cd', contents="I am cd")
+    
+    pyos.mkfile(pyos.fs, 'bin', directory=False)
+    pyos.mkfile(pyos.fs, 'boot/leg/candy', directory=True)
+
+
 
 modules = {
-    "exit":exit,
+    "exit": exit,
     "ls": ls,
     "cd": cd,
     "mkdir": mkdir,
