@@ -4,6 +4,7 @@ import getpass
 
 from lkm import *
 from filesystem import *
+from modules import MODULES
 
 DELIM = "/"
 ROOT = ""
@@ -213,31 +214,22 @@ def fs_setup(pyos):
     pyos.mkfile(pyos.fs, 'root', directory=True)
 
     pyos.mkfile(pyos.fs, '/etc/shadow', contents="Very secure passwords be here")
-    pyos.mkfile(pyos.fs, '/lib/ls', contents="I am ls")
-    pyos.mkfile(pyos.fs, '/lib/echo', contents="I am echo")
-    pyos.mkfile(pyos.fs, '/lib/cd', contents="I am cd")
+
+    for mod in MODULES.keys():
+        pyos.mkfile(pyos.fs, f'/lib/{mod}', contents=MODULES[mod])
     
     pyos.mkfile(pyos.fs, 'bin', directory=False)
     pyos.mkfile(pyos.fs, 'boot/leg/candy', directory=True)
 
-
-
-modules = {
-    "exit": exit,
-    "ls": ls,
-    "cd": cd,
-    "mkdir": mkdir,
-    "touch": touch,
-    "clear": clear,
-    "cat": cat,
-    "edit": edit,
-}
 
 intro_str = """Welcome to PyOS!
 Type 'help' to view a list of available commands"""
 
 if __name__=="__main__":
     comp = PyOS()
-    for name in modules.keys():
-        comp.load_lkm(name, modules[name])
+    comp.load_lkm("loader", module_loader)
+
+    for mod in MODULES.keys():
+        comp.do_loader(mod, MODULES[mod])
+
     comp.cmdloop(intro=intro_str)
