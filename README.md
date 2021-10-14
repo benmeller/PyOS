@@ -7,20 +7,40 @@ Long-term goal is to have this somewhat mimick a Unix-like OS with kernel module
 This current system is centred around Python's cmd.Cmd, meaning the prompt is everything. It was a quicker way to get up and running, and should be fairly easy to remove later on to better simulate an operating system.
 
 ## Currently implemented
-At the moment, we have a working prompt, filesystem, basic commands (cd, ls, cat), a text editor, and a way to load "kernel modules" that exist as Python code
+At the moment, we have a working prompt, filesystem, basic commands (cd, ls, cat, etc.)and a text editor. We also have a way to dynamically add functionality to the OS at runtime.
+
+To add functionality at runtime, you must create a PyOS file in the `/lib` directory (`$ edit filename`). The module data is structured like a python dictionary and must have values for `name` and `function`. Values for `help` and `usage` are recommended. As such, a module file may look like this:
+
+```python
+{
+"name": "helloworld",
+"help": "Prints hello world",
+"usage": "helloworld",
+"function": """
+    print('hello', end=' ')
+    print('world')
+"""
+}
+```
+
+But as a bare minimum, must be something like
+```python
+{
+"name": "helloworld",
+"function": "print('hello world')"
+}
+```
+
+Once the file exists, simply call `module_load helloworld` (assuming the file is of the same name) to have the module compiled and available for use.
+
+Do note that since this program only exists in memory, upon exit any modules created will be lost. At this stage, persistence is not something I am after.
 
 ## To do
 
-* Load kernel modules from files
 * Users
 * Permissions
 * Boot/reboot
 * Remove cmd.Cmd `cmdloop()` as central point of OS
 
-
 ## Next Steps
-Start to move all the modules into PyOS files, and then load them from the files into the OS. so in the codebase, all of these modules should just exist as multiline strings. From there, they can be built as a module and dynamically loaded into the OS.
-
-Basically, time to sort out all the modules
-{HELP} <string>
-{EXEC} <code>
+Implement a boot process - strip the code down to the bare minimum so everything can exist as strings to be compiled and built. Then implement a boot() function for the os so it goes through the process of loading everything up. (I think we will recompile all the binaries from the prog files in /lib - that will allow for some privescs that way)

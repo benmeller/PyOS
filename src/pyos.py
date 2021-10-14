@@ -2,6 +2,8 @@ from cmd import Cmd
 import types
 import getpass
 
+import curses
+
 from lkm import *
 from filesystem import *
 from modules import MODULES
@@ -227,9 +229,9 @@ Type 'help' to view a list of available commands"""
 
 if __name__=="__main__":
     comp = PyOS()
-    comp.load_lkm("loader", module_loader)
+    comp.load_lkm("module_load", module_loader)
 
     for mod in MODULES.keys():
-        comp.do_loader(mod, MODULES[mod])
+        comp.do_module_load(f"/lib/{mod}")
 
     comp.cmdloop(intro=intro_str)
