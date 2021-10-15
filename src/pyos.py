@@ -6,7 +6,7 @@ import curses
 
 from lkm import *
 from filesystem import *
-from modules import MODULES
+from modules import LIB_MODULES, BOOT_MODULES
 
 DELIM = "/"
 ROOT = ""
@@ -16,7 +16,7 @@ class PyOS(Cmd):
     Currently only designed for a single user
     """
 
-    def __init__(self, root_name="", delim="/", completekey='tab') -> None:
+    def __init__(self, root_name="", delim="/", completekey='tab', intro_str="") -> None:
         super().__init__(completekey)
 
         # TODO: Make the delimiter and root location modifiable. Low priority
@@ -25,7 +25,6 @@ class PyOS(Cmd):
 
         self.fs = File(filepath=ROOT, directory=True)
         self.current_dir = self.fs
-        fs_setup(self)
 
         self.modules = {}
 
@@ -36,6 +35,10 @@ class PyOS(Cmd):
             hostname=self.compname,
             dir=(self.current_dir.filepath)
         )
+
+        self.intro_str = intro_str
+        if self.intro_str == "":
+            self.intro_str = """Welcome to PyOS!\nType 'help' to view a list of available commands"""
 
     # --------------- Cmd Overrides --------------------
     def cmdloop(self, intro=None):
@@ -212,9 +215,9 @@ class PyOS(Cmd):
         self.modules[name] = lkm
 
     def unload_lkm(self, name):
-    """
+        """
         Given a module name, remove it from the OS
-    """
+        """
         name = "do_"+name
         if name not in self.modules.keys():
             return False
@@ -224,6 +227,9 @@ class PyOS(Cmd):
         # Remove record
         del self.modules[name]
         return True
+
+
+def linux_fs(pyos):
     pyos.mkfile(pyos.fs, 'bin', directory=True)
     pyos.mkfile(pyos.fs, 'home', directory=True)
     pyos.mkfile(pyos.fs, 'etc', directory=True)
@@ -231,23 +237,25 @@ class PyOS(Cmd):
     pyos.mkfile(pyos.fs, 'boot', directory=True)
     pyos.mkfile(pyos.fs, 'root', directory=True)
 
-    pyos.mkfile(pyos.fs, '/etc/shadow', contents="Very secure passwords be here")
+    for mod in LIB_MODULES.keys():
+        pyos.mkfile(pyos.fs, f'/lib/{mod}', contents=LIB_MODULES[mod])
+    
+    for mod in BOOT_MODULES.keys():
+        pyos.mkfile(pyos.fs, f'/boot/{mod}', contents=BOOT_MODULES[mod])
+    
 
+def os_setup(pyos):
+    linux_fs(pyos)
     comp.load_lkm({"name": "module_load", "exec": module_loader})
     comp.load_lkm({"name": "module_unload", "exec": module_unloader})
+
+    lib, _ = pyos.resolve_path(pyos.fs, "/lib", directory=True)
     
-    pyos.mkfile(pyos.fs, 'bin', directory=False)
-    pyos.mkfile(pyos.fs, 'boot/leg/candy', directory=True)
+    comp.do_module_load(f"/boot/boot", hidden=True)
+    comp.boot([])
 
-
-intro_str = """Welcome to PyOS!
-Type 'help' to view a list of available commands"""
 
 if __name__=="__main__":
     comp = PyOS()
-    comp.load_lkm("module_load", module_loader)
-
-    for mod in MODULES.keys():
-        comp.do_module_load(f"/lib/{mod}")
-
-    comp.cmdloop(intro=intro_str)
+    os_setup(comp)
+    comp.cmdloop()

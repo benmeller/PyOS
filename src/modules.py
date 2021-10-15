@@ -71,7 +71,7 @@ ls = '''{
         dir = self.current_dir
 
     print("Directory:", dir.filepath)
-    for i in dir.get_children():
+    for i in sorted(dir.get_children(), key=lambda x: x.name):
             print(i, end="\t")
     print()
 """}'''
@@ -120,7 +120,23 @@ edit = '''{
     curses.wrapper(texteditor.edit_file, file=file)
 """}'''
 
-MODULES = {
+reboot = '''{
+"name": "reboot",
+"help": "Restarts the computer",
+"usage": "reboot",
+"function": """
+    import time
+    print("Rebooting...")
+    time.sleep(2)
+    bin, _ = self.resolve_path(self.fs, "/bin", directory=True)
+    modules = bin.get_children().copy()
+    for mod in modules:
+        self.do_module_unload(mod.name)
+    bin, _ = self.resolve_path(self.fs, "/bin", directory=True)
+    self.boot(args)
+"""}'''
+
+LIB_MODULES = {
     "touch": touch,
     "cat": cat,
     "exit": exit,
@@ -129,4 +145,28 @@ MODULES = {
     "mkdir": mkdir,
     "clear": clear,
     "edit": edit,
+    "reboot": reboot,
+}
+
+
+# --------------------------------------------------------
+
+boot = r'''{
+"name": "boot",
+"function": """
+    import time
+    print("Starting up...")
+    time.sleep(1)
+    lib, _ = self.resolve_path(self.fs, "/lib", directory=True)
+    modules = lib.get_children()
+    for mod in modules:
+        print(f" Loading {mod.name}", ' '*15, end="\\r")
+        self.do_module_load(f"/lib/{mod.name}")
+        time.sleep(0.15)
+    print(" "*30, end="\\r")
+    print(self.intro_str)
+"""}'''
+
+BOOT_MODULES = {
+    "boot": boot,
 }

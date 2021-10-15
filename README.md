@@ -7,7 +7,7 @@ Long-term goal is to have this somewhat mimick a Unix-like OS with kernel module
 This current system is centred around Python's cmd.Cmd, meaning the prompt is everything. It was a quicker way to get up and running, and should be fairly easy to remove later on to better simulate an operating system.
 
 ## Currently implemented
-At the moment, we have a working prompt, filesystem, basic commands (cd, ls, cat, etc.)and a text editor. We also have a way to dynamically add functionality to the OS at runtime.
+At the moment, we have a working prompt, filesystem, basic commands (cd, ls, cat, etc.)and a text editor. We also have a way to dynamically add and remove functionality to and from the OS at runtime.
 
 To add functionality at runtime, you must create a PyOS file in the `/lib` directory (`$ edit filename`). The module data is structured like a python dictionary and must have values for `name` and `function`. Values for `help` and `usage` are recommended. As such, a module file may look like this:
 
@@ -39,8 +39,7 @@ Do note that since this program only exists in memory, upon exit any modules cre
 
 * Users
 * Permissions
-* Boot/reboot
 * Remove cmd.Cmd `cmdloop()` as central point of OS
 
 ## Next Steps
-Implement a boot process - strip the code down to the bare minimum so everything can exist as strings to be compiled and built. Then implement a boot() function for the os so it goes through the process of loading everything up. (I think we will recompile all the binaries from the prog files in /lib - that will allow for some privescs that way)
+Introduce the concept of users (which will be the gateway to adding permissions on file objects)
