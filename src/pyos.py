@@ -190,24 +190,40 @@ class PyOS(Cmd):
         return target_dir, new_path
 
     # --------------------------------------
-    def load_lkm(self, lkm_name, lkm):
+    def load_lkm(self, lkm, *args, **kwargs):
         """
         Loadable kernel module. Dynamically add a 'binary' to PyOS by promoting 
         a func to a method
 
         Immeasurable thanks to Alan Robertson for insights into this problem
         """
-        self.__setattr__("do_"+lkm_name, types.MethodType(lkm, self))
-
-        # TODO: Replace lkm with some lkm data object. 
-        self.modules[lkm_name] = lkm
+        name, exec = lkm['name'], lkm['exec']
 
 
-def fs_setup(pyos):
+        name = "do_"+name
+        if 'hidden' in kwargs:
+            if kwargs['hidden'] == True:
+                # Hidden allows us to load modules into the OS whilst not having them 
+                # show in the cmd.Cmd prompt. 
+                name = name.lstrip("do_")
+
+        self.__setattr__(name, types.MethodType(exec, self))
+
+        self.modules[name] = lkm
+
+    def unload_lkm(self, name):
     """
-    Makes a bunch of typical files, useful for testing whether the filesystem
-    commands work or not.
+        Given a module name, remove it from the OS
     """
+        name = "do_"+name
+        if name not in self.modules.keys():
+            return False
+
+        # Remove method from OS object
+        self.__delattr__(name)
+        # Remove record
+        del self.modules[name]
+        return True
     pyos.mkfile(pyos.fs, 'bin', directory=True)
     pyos.mkfile(pyos.fs, 'home', directory=True)
     pyos.mkfile(pyos.fs, 'etc', directory=True)
@@ -217,8 +233,8 @@ def fs_setup(pyos):
 
     pyos.mkfile(pyos.fs, '/etc/shadow', contents="Very secure passwords be here")
 
-    for mod in MODULES.keys():
-        pyos.mkfile(pyos.fs, f'/lib/{mod}', contents=MODULES[mod])
+    comp.load_lkm({"name": "module_load", "exec": module_loader})
+    comp.load_lkm({"name": "module_unload", "exec": module_unloader})
     
     pyos.mkfile(pyos.fs, 'bin', directory=False)
     pyos.mkfile(pyos.fs, 'boot/leg/candy', directory=True)
